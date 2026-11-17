@@ -253,6 +253,7 @@ TEXTO_AYUDA = (
     "/ayuda – Esta ayuda\n"
     f"/historial – Tus últimos {MAX_HISTORIAL} mensajes analizados\n"
     "/resumen – Evolución emocional de la conversación\n"
+    "/consejo – Consejo según tu conversación (o /consejo &lt;mensaje&gt;)\n"
     "/borrar – Borra tu historial"
 )
 
@@ -333,6 +334,78 @@ async def cmd_resumen(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("\n".join(lineas), parse_mode="HTML")
 
 
+# ─── Función nueva: /consejo ────────────────────────────
+
+CONSEJOS = {
+    "agresion": "🛑 Hay agresividad en la conversación. No respondas en caliente: pon un límite claro y retoma cuando ambos estén calmados. Nadie merece insultos.",
+    "control": "🔒 Se repiten señales de control (ubicación, con quién hablas). Una relación sana se basa en la confianza: está bien pedir tu espacio.",
+    "manipulacion": "🎭 Aparecen frases de culpa o condiciones. Escucha, pero no tomes decisiones desde la culpa; expresa lo que sientes con calma.",
+    "celos": "😒 Hay inseguridad y celos. Hablen de lo que la causa sin acusarse y acuerden qué necesita cada uno para sentirse tranquilo.",
+    "reclamo": "📢 La otra persona siente que no le prestas atención. Reconoce su molestia y acuerden cómo comunicarse cuando estén ocupados.",
+    "ruptura": "💔 Se habla de terminar. Es mejor conversarlo en persona, sin prisas, y respetar la decisión del otro aunque duela.",
+    "desinteres": "❄️ Las respuestas son cortas y frías. Pregunta directamente si todo está bien y, si no hay interés, no insistas: dale espacio.",
+    "inseguridad": "😟 La otra persona necesita sentirse segura. Pequeños gestos de cariño y respuestas claras ayudan mucho.",
+    "tristeza": "🫂 La otra persona está pasando por un momento difícil. Más que soluciones, ofrece escucha y compañía.",
+    "afecto": "💕 La conversación va muy bien, hay cariño. Sigue correspondiendo y demuestra interés también con hechos.",
+    "curiosidad": "🤔 Hay interés en conocerte. Aprovecha para hacer preguntas tú también y mantener la conversación viva.",
+    "normal": "💬 Es una conversación tranquila. Mantén el tono natural y cercano.",
+}
+
+# Prioridad: si aparece algo grave, el consejo se centra en eso aunque no sea lo más frecuente
+PRIORIDAD = ["agresion", "control", "manipulacion", "ruptura", "celos", "reclamo",
+             "tristeza", "inseguridad", "desinteres", "afecto", "curiosidad", "normal"]
+
+
+def elegir_consejo(registros) -> str:
+    """Arma un consejo a partir del historial de mensajes analizados."""
+    intenciones = Counter(r["intencion"] for r in registros)
+    graves = [i for i in PRIORIDAD[:4] if intenciones[i] > 0]
+    principal = graves[0] if graves else intenciones.most_common(1)[0][0]
+
+    partes = [CONSEJOS.get(principal, CONSEJOS["normal"])]
+
+    toxicos = sum(r["toxico"] for r in registros)
+    if toxicos:
+        partes.append(f"🚩 {toxicos} mensaje(s) fueron tóxicos. Protege tu bienestar: no tienes que tolerar faltas de respeto.")
+
+    ghosting = round(sum(r["ghosting"] for r in registros) / len(registros))
+    if ghosting >= 50:
+        partes.append(f"💔 El ghosting promedio es alto ({ghosting}%). Si siempre eres tú quien busca la conversación, quizá toque bajar la intensidad.")
+
+    if len(registros) >= 4:
+        partes.append(tendencia(registros))
+
+    return "\n\n".join(partes)
+
+
+async def cmd_consejo(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Opción 1: /consejo <mensaje>  → consejo para ese mensaje concreto
+    if context.args:
+        texto = " ".join(context.args)
+        emocion, toxicidad, ghosting, riesgo, intencion, confianza = analizar_texto(texto)
+        registro = {"intencion": intencion, "toxico": toxicidad == "si", "ghosting": ghosting}
+        consejo = elegir_consejo([registro])
+        await update.message.reply_text(
+            f"🧭 <b>Consejo para:</b> <i>{html.escape(texto)}</i>\n"
+            f"🧠 Intención: {intencion.capitalize()} · 🔥 Riesgo: {riesgo}\n\n{consejo}",
+            parse_mode="HTML",
+        )
+        return
+
+    # Opción 2: /consejo  → consejo según todo el historial
+    registros = HISTORIAL[update.effective_user.id]
+    if not registros:
+        await update.message.reply_text(
+            "📭 Aún no has analizado mensajes.\n"
+            "Envíame algunos mensajes primero, o usa: /consejo <mensaje>"
+        )
+        return
+    await update.message.reply_text(
+        f"🧭 <b>Consejo según tus últimos {len(registros)} mensaje(s)</b>\n"
+        f"━━━━━━━━━━━━━━━━━━━━\n\n{elegir_consejo(registros)}",
+        parse_mode="HTML",
+    )
+
 async def cmd_borrar(update: Update, context: ContextTypes.DEFAULT_TYPE):
     HISTORIAL.pop(update.effective_user.id, None)
     await update.message.reply_text("🗑️ Historial borrado.")
@@ -349,6 +422,7 @@ def main():
     app.add_handler(CommandHandler("historial", cmd_historial))
     app.add_handler(CommandHandler("resumen", cmd_resumen))
     app.add_handler(CommandHandler("borrar", cmd_borrar))
+    app.add_handler(CommandHandler("consejo", cmd_consejo))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, responder))
     
     print("🟢 Bot corriendo... Esperando mensajes")

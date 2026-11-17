@@ -31,6 +31,7 @@
 | 🎯 **Confianza del modelo** | Probabilidad de la emoción detectada |
 | 💬 **Sugerencias de respuesta** | Te dice **cómo responder** al mensaje que recibiste |
 | 🗂️ **Historial y resumen** *(nuevo)* | Guarda tus últimos 20 análisis y muestra la evolución emocional |
+| 🧭 **Consejos personalizados** *(nuevo)* | Comando `/consejo` con recomendaciones según la conversación |
 
 ---
 
@@ -44,6 +45,8 @@ Antes el bot analizaba cada mensaje de forma aislada. Ahora recuerda los último
 | `/ayuda` | Muestra la ayuda |
 | `/historial` | Lista los últimos mensajes analizados con su emoción, intención y riesgo |
 | `/resumen` | Porcentaje de cada emoción, intenciones más frecuentes, mensajes tóxicos y de riesgo alto, ghosting promedio y **tendencia** (si la conversación se enfría o se calienta) |
+| `/consejo` | **(función nueva)** Da un consejo personalizado según cómo va la conversación |
+| `/consejo <mensaje>` | Da un consejo para un mensaje concreto, ej: `/consejo con quién estabas` |
 | `/borrar` | Borra tu historial |
 
 Si en el resumen se repiten señales de agresión, control o manipulación, el bot muestra un aviso sugiriendo hablar con alguien de confianza.
@@ -56,6 +59,27 @@ Si en el resumen se repiten señales de agresión, control o manipulación, el b
 - "qué haces" ahora es *curiosidad* (antes era *control*).
 - Se agregó la intención *inseguridad* ("¿todavía me quieres?"), que estaba documentada pero no se detectaba.
 - Toxicidad corregida: el modelo `hate_speech` de pysentimiento devuelve una **lista** de etiquetas y el código anterior la comparaba con un texto, así que nunca marcaba toxicidad.
+
+### 🧭 Función nueva: `/consejo`
+
+Revisa los mensajes analizados y elige el consejo más importante:
+
+1. Si aparece algo grave (agresión, control, manipulación o ruptura), el consejo se centra en eso aunque no sea lo más frecuente.
+2. Si no, se basa en la intención que más se repite (afecto, desinterés, celos…).
+3. Añade avisos extra si hubo mensajes tóxicos o si el ghosting promedio supera el 50 %.
+4. Con 4 o más mensajes, indica si la conversación se enfría o se calienta.
+
+Ejemplo de respuesta:
+
+```
+🧭 Consejo según tus últimos 5 mensaje(s)
+━━━━━━━━━━━━━━━━━━━━
+🛑 Hay agresividad en la conversación. No respondas en caliente: pon un
+límite claro y retoma cuando ambos estén calmados. Nadie merece insultos.
+
+🚩 1 mensaje(s) fueron tóxicos. Protege tu bienestar: no tienes que
+tolerar faltas de respeto.
+```
 
 ---
 
@@ -152,7 +176,7 @@ Salida esperada (la primera vez descarga los modelos, puede tardar unos minutos)
 1. Busca tu bot en Telegram por su username y pulsa **Iniciar** (`/start`)
 2. Escribe o reenvía un mensaje que te hayan enviado
 3. El bot responde con el análisis y una sugerencia de respuesta
-4. Después de varios mensajes, usa `/historial` y `/resumen`
+4. Después de varios mensajes, usa `/historial`, `/resumen` y `/consejo`
 
 ---
 
