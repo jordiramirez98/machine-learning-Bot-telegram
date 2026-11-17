@@ -1,0 +1,11 @@
+# Versiones probadas en Windows 10 + Python 3.11
+python-telegram-bot==20.7
+pysentimiento==0.7.3
+torch>=2.2
+numpy<2
+pandas<2.3
+pyarrow==17.0.0
+datasets==2.21.0
+transformers==4.44.2
+huggingface_hub==0.24.6
+accelerate==0.33.0

@@ -1,0 +1,27 @@
+# ===== Instalación y ejecución (Windows, CMD en VS Code) =====
+# Requiere Python 3.11 (con 3.12+ las librerías dan problemas)
+
+# 1. Crear y activar entorno virtual con Python 3.11
+py -3.11 -m venv venv
+venv\Scripts\activate
+
+# 2. Instalar PyTorch CPU y luego el resto (versiones probadas que funcionan juntas)
+python -m pip install --upgrade pip
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.txt
+
+# 3. Probar que la IA funciona (la primera vez descarga el modelo, ~435 MB)
+python -c "from pysentimiento import create_analyzer; a=create_analyzer(task='emotion', lang='es'); print(a.predict('te quiero mucho'))"
+#    Debe salir: AnalyzerOutput(output=joy, ...)
+
+# 4. Configurar TU token (créalo con @BotFather -> /newbot)
+#    NUNCA escribas el token real en este archivo ni lo subas a GitHub.
+#    CMD:
+set TELEGRAM_TOKEN=PEGA_AQUI_TU_TOKEN
+#    PowerShell:  $env:TELEGRAM_TOKEN="PEGA_AQUI_TU_TOKEN"
+
+# 5. Ejecutar bot
+python bot.py
+
+# 6. En Telegram: abre tu bot, escribe /start y luego envíale mensajes.
+#    Prueba también /historial, /resumen y /borrar.
